@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>What Is the Windows GDID? How to Find Your Global Device Identifier | Blacklight</title>
+  <meta name="description" content="The Windows GDID (Global Device Identifier) is a persistent, device-level ID stored at HKCU\SOFTWARE\Microsoft\IdentityCRL\ExtendedProperties\LID. It survives updates and VPNs. Here's what it is, where it lives, and how to find yours." />
+  <link rel="canonical" href="https://blacklight.tools/artifacts/gdid" />
+  <link rel="icon" type="image/png" href="/favicon.png" />
+
+  <!-- OpenGraph / Twitter -->
+  <meta property="og:title" content="What Is the Windows GDID? Find Your Global Device Identifier" />
+  <meta property="og:description" content="A persistent Windows device ID that survives updates and VPNs — stored in your registry at IdentityCRL\ExtendedProperties\LID. What it is and how to find yours." />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://blacklight.tools/artifacts/gdid" />
+  <meta property="og:image" content="https://blacklight.tools/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- Structured data: TechArticle -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "What Is the Windows GDID (Global Device Identifier)?",
+    "description": "The Windows GDID is a persistent, device-level identifier stored in the registry at HKCU\\SOFTWARE\\Microsoft\\IdentityCRL\\ExtendedProperties\\LID. It survives OS updates and is not masked by a VPN.",
+    "author": { "@type": "Organization", "name": "Peach Tree Apps" },
+    "publisher": { "@type": "Organization", "name": "Blacklight" },
+    "datePublished": "2026-07-11",
+    "dateModified": "2026-07-11",
+    "mainEntityOfPage": "https://blacklight.tools/artifacts/gdid"
+  }
+  </script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0e0d;
+      --bg-deep: #050807;
+      --panel: #0f1614;
+      --panel-border: #1a2622;
+      --green: #9fef00;
+      --green-dim: #7ab800;
+      --green-glow: rgba(159, 239, 0, 0.4);
+      --red: #ff003c;
+      --red-glow: rgba(255, 0, 60, 0.5);
+      --text: #c8d4d1;
+      --text-dim: #6b7d77;
+      --text-faint: #3d4944;
+      --mono: 'JetBrains Mono', 'Courier New', monospace;
+      --display: 'Space Mono', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 15px;
+      line-height: 1.75;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Scanlines */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(159,239,0,0.015) 2px, rgba(159,239,0,0.015) 3px);
+      z-index: 1000;
+    }
+    /* Vignette */
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      pointer-events: none;
+      background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.5) 100%);
+      z-index: 999;
+    }
+    .grid-bg {
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(159,239,0,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(159,239,0,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none; z-index: 0;
+    }
+
+    /* NAV */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10,14,13,0.85);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--panel-border);
+      padding: 18px 0;
+    }
+    nav .wrap {
+      max-width: 900px; margin: 0 auto; padding: 0 32px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    nav .logo {
+      font-family: var(--display); font-weight: 700; font-size: 18px;
+      color: var(--green); text-shadow: 0 0 12px var(--green-glow);
+      letter-spacing: 1px; text-decoration: none;
+    }
+    nav .logo::before { content: '> '; color: var(--text-dim); }
+    nav .back {
+      color: var(--text-dim); text-decoration: none; font-size: 13px;
+      letter-spacing: 1px; text-transform: uppercase; transition: color 0.2s;
+    }
+    nav .back:hover { color: var(--green); }
+    nav .back::before { content: '← '; }
+
+    /* ARTICLE */
+    main {
+      max-width: 900px; margin: 0 auto; padding: 60px 32px 100px;
+      position: relative; z-index: 2;
+    }
+    .breadcrumb {
+      font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--text-dim); margin-bottom: 28px;
+    }
+    .breadcrumb a { color: var(--green-dim); text-decoration: none; }
+    .breadcrumb a:hover { color: var(--green); }
+    .breadcrumb .sep { color: var(--text-faint); margin: 0 8px; }
+
+    h1 {
+      font-family: var(--display); font-weight: 700;
+      font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1.1;
+      letter-spacing: -1px; color: #fff; margin-bottom: 20px;
+    }
+    h1 .accent { color: var(--green); text-shadow: 0 0 30px var(--green-glow); }
+
+    .lede {
+      font-size: 1.1rem; color: var(--text); margin-bottom: 40px;
+      padding-left: 18px; border-left: 3px solid var(--green);
+    }
+    .lede strong { color: var(--green); font-weight: 600; }
+
+    h2 {
+      font-family: var(--display); font-weight: 700;
+      font-size: 1.5rem; color: #fff; margin: 48px 0 16px;
+      letter-spacing: -0.5px;
+    }
+    h2::before { content: '// '; color: var(--green); }
+
+    p { margin-bottom: 18px; color: var(--text); }
+    p strong { color: var(--green); font-weight: 600; }
+    a.inline { color: var(--green); text-decoration: none; border-bottom: 1px solid var(--green-dim); }
+    a.inline:hover { text-shadow: 0 0 8px var(--green-glow); }
+
+    ul { margin: 0 0 18px 0; padding-left: 4px; list-style: none; }
+    ul li { padding: 6px 0 6px 24px; position: relative; color: var(--text); }
+    ul li::before { content: '›'; color: var(--green); position: absolute; left: 4px; }
+    ul li strong { color: #fff; }
+
+    /* Spec / registry box */
+    .spec {
+      background: var(--panel); border: 1px solid var(--panel-border);
+      border-left: 3px solid var(--green); border-radius: 4px;
+      padding: 24px 28px; margin: 24px 0;
+    }
+    .spec-row { display: grid; grid-template-columns: 160px 1fr; gap: 16px; padding: 8px 0; border-bottom: 1px dashed var(--panel-border); }
+    .spec-row:last-child { border-bottom: none; }
+    .spec-row .k { color: var(--text-dim); font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; }
+    .spec-row .v { color: var(--text); font-size: 14px; word-break: break-all; }
+    .spec-row .v .path { color: var(--green); }
+
+    /* Code block */
+    .code {
+      background: var(--bg-deep); border: 1px solid var(--panel-border);
+      border-radius: 4px; overflow: hidden; margin: 20px 0;
+    }
+    .code-head {
+      background: #0c1311; border-bottom: 1px solid var(--panel-border);
+      padding: 10px 16px; display: flex; align-items: center; gap: 8px;
+    }
+    .code-head .dot { width: 11px; height: 11px; border-radius: 50%; background: #2a3530; }
+    .code-head .dot.green { background: var(--green-dim); }
+    .code-head .label { margin-left: 12px; color: var(--text-dim); font-size: 11px; letter-spacing: 1px; }
+    .code-head .copy {
+      margin-left: auto; background: transparent; border: 1px solid var(--green-dim);
+      color: var(--green); font-family: var(--mono); font-size: 10px; letter-spacing: 1px;
+      text-transform: uppercase; padding: 4px 12px; cursor: pointer; transition: all 0.2s; border-radius: 3px;
+    }
+    .code-head .copy:hover { background: rgba(159,239,0,0.1); box-shadow: 0 0 12px var(--green-glow); }
+    .code pre { padding: 20px 22px; overflow-x: auto; }
+    .code code { font-family: var(--mono); font-size: 13px; color: var(--text); line-height: 1.8; white-space: pre; }
+    .code .cm { color: var(--text-dim); }
+    .code .kw { color: var(--green); }
+
+    /* Callout */
+    .callout {
+      background: rgba(255,0,60,0.05); border: 1px solid var(--red);
+      border-left: 3px solid var(--red); border-radius: 4px;
+      padding: 20px 24px; margin: 24px 0; font-size: 14px;
+    }
+    .callout .tag { color: var(--red); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; font-size: 11px; display: block; margin-bottom: 6px; }
+
+    /* CTA */
+    .cta {
+      background: var(--panel); border: 1px solid var(--panel-border);
+      border-radius: 4px; padding: 40px; margin: 56px 0 0; text-align: center;
+    }
+    .cta h3 { font-family: var(--display); color: #fff; font-size: 1.4rem; margin-bottom: 12px; }
+    .cta h3 .accent { color: var(--green); }
+    .cta p { color: var(--text-dim); font-size: 14px; margin-bottom: 24px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 12px;
+      background: var(--red); color: #fff; padding: 18px 34px;
+      border: 2px solid var(--red); font-family: var(--mono); font-weight: 800;
+      font-size: 15px; letter-spacing: 2px; text-transform: uppercase;
+      text-decoration: none; border-radius: 2px; transition: all 0.2s;
+      box-shadow: 0 0 30px var(--red-glow);
+    }
+    .btn:hover { background: #ff1a4f; transform: translateY(-2px); box-shadow: 0 0 50px var(--red-glow); }
+
+    /* Related */
+    .related { margin-top: 56px; border-top: 1px solid var(--panel-border); padding-top: 32px; }
+    .related .label { font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: var(--green); margin-bottom: 16px; }
+    .related .label::before { content: '// '; color: var(--text-dim); }
+    .related-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .related-grid a {
+      background: var(--bg-deep); border: 1px solid var(--panel-border);
+      padding: 16px 18px; text-decoration: none; transition: all 0.2s; border-radius: 3px;
+    }
+    .related-grid a:hover { border-color: var(--green-dim); box-shadow: 0 0 16px rgba(159,239,0,0.1); }
+    .related-grid a .t { color: #fff; font-size: 14px; font-family: var(--display); }
+    .related-grid a .d { color: var(--text-dim); font-size: 12px; margin-top: 4px; }
+    .related-grid a .soon { color: var(--text-faint); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; }
+
+    footer {
+      border-top: 1px solid var(--panel-border); padding: 40px 32px; text-align: center;
+      color: var(--text-faint); font-size: 10px; letter-spacing: 1px; position: relative; z-index: 2;
+    }
+    footer a { color: var(--green-dim); text-decoration: none; }
+    footer a:hover { color: var(--green); }
+
+    ::selection { background: var(--green); color: var(--bg-deep); }
+
+    @media (max-width: 700px) {
+      .spec-row { grid-template-columns: 1fr; gap: 4px; }
+      .related-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="grid-bg"></div>
+
+  <nav>
+    <div class="wrap">
+      <a href="/" class="logo">BLACKLIGHT</a>
+      <a href="/#artifacts" class="back">Back to artifacts</a>
+    </div>
+  </nav>
+
+  <main>
+    <div class="breadcrumb">
+      <a href="/">Home</a><span class="sep">/</span><a href="/#artifacts">Artifacts</a><span class="sep">/</span>GDID
+    </div>
+
+    <h1>The Windows <span class="accent">GDID</span><br/>(Global Device Identifier)</h1>
+
+    <p class="lede">
+      The <strong>GDID</strong> is a persistent, device-level identifier that Windows assigns to your installation. It stays fixed across OS updates, and a VPN does nothing to hide it — because it's stored locally and reported by the operating system itself, not by your network. This page explains what it is, where it lives, and how to find yours.
+    </p>
+
+    <h2>What is the GDID?</h2>
+    <p>
+      A Global Device Identifier is a <strong>persistent, device-level identifier</strong> designed to uniquely identify an installation of Windows — on a physical device or a virtual machine — across certain Microsoft services and scenarios. Technically it's a 64-bit Microsoft Account "Device PUID" that is <strong>assigned by Microsoft's servers</strong> (login.live.com) during setup and then stored in your registry.
+    </p>
+    <p>
+      Importantly, it isn't tied to whether you sign in with a Microsoft Account. The Connected Devices Platform [the Windows service that syncs your device to Microsoft's device graph] has an <strong>anonymous device path</strong> that provisions an identifier even without an account. In practice: if you're running Windows, you have one.
+    </p>
+
+    <h2>Where it lives</h2>
+    <p>
+      The identifier is stored in the current-user registry hive, under the IdentityCRL extended properties:
+    </p>
+    <div class="spec">
+      <div class="spec-row"><div class="k">Registry Path</div><div class="v"><span class="path">HKCU\SOFTWARE\Microsoft\IdentityCRL\ExtendedProperties\LID</span></div></div>
+      <div class="spec-row"><div class="k">Type</div><div class="v">64-bit MSA Device PUID (server-assigned)</div></div>
+      <div class="spec-row"><div class="k">Assigned by</div><div class="v">login.live.com during device provisioning</div></div>
+      <div class="spec-row"><div class="k">Survives updates?</div><div class="v"><span class="path">Yes</span> — consistent across Windows OS updates</div></div>
+      <div class="spec-row"><div class="k">Survives reinstall?</div><div class="v">No — a clean reinstall is assigned a new GDID</div></div>
+    </div>
+
+    <h2>How to find yours</h2>
+    <p>
+      Open <strong>PowerShell</strong> and run the command below. It reads the IdentityCRL extended properties on your machine [a read-only lookup — it does not change anything]:
+    </p>
+    <div class="code">
+      <div class="code-head">
+        <span class="dot"></span><span class="dot"></span><span class="dot green"></span>
+        <span class="label">powershell — read-only</span>
+        <button class="copy" onclick="copyCode(this)">Copy</button>
+      </div>
+      <pre><code><span class="cm"># Read the IdentityCRL extended properties (where the GDID/LID lives)</span>
+Get-ItemProperty -Path <span class="kw">"HKCU:\SOFTWARE\Microsoft\IdentityCRL\ExtendedProperties"</span> -ErrorAction SilentlyContinue | Format-List</code></pre>
+    </div>
+    <p style="font-size: 13px; color: var(--text-dim);">
+      If the key exists, you'll see a <strong>LID</strong> value among the properties — that's your device identifier. The exact fields present can vary between machines and Windows versions; on some systems the key may be empty or absent, which simply means the identifier is provisioned through a different path.
+    </p>
+
+    <h2>Why a VPN doesn't hide it</h2>
+    <p>
+      This is the part that surprises people. A VPN masks your <strong>network exit point</strong> — the public IP address anyone watching your traffic would see. But it has no effect on what the operating system itself already knows and stores. The GDID sits above the network layer, as a constant thread that ties your sessions together.
+    </p>
+    <p>
+      So the moment your real identity is ever exposed even once — the VPN drops, a connection leaks, or you sign into a personal account — that event can be correlated back to the same device identifier. The IP rotates; the GDID doesn't rotate with it.
+    </p>
+
+    <div class="callout">
+      <span class="tag">Real-world case</span>
+      In July 2026, U.S. court documents in the Scattered Spider extradition case revealed that investigators used a Windows GDID, alongside other telemetry, to correlate a suspect's activity across multiple countries and VPN providers. The network endpoint kept changing; the Windows installation identifier stayed constant. It was the first widely-reported instance of this identifier surfacing in a public criminal complaint.
+    </div>
+
+    <h2>How to reduce your exposure</h2>
+    <p>
+      You can't casually delete the GDID, but you can shrink the surrounding telemetry footprint. Standard, legitimate privacy hygiene:
+    </p>
+    <ul>
+      <li><strong>Minimize diagnostic data:</strong> Settings → Privacy &amp; security → Diagnostics &amp; feedback → turn off optional diagnostic data. This reduces what gets sent, though it doesn't remove the identifier.</li>
+      <li><strong>Separate your identities:</strong> don't sign into personal accounts from an environment you want kept isolated — correlation between accounts is what does the damage.</li>
+      <li><strong>Use a dedicated or amnesiac system</strong> for sensitive work — privacy-focused Linux live systems don't generate persistent Windows identifiers between reboots.</li>
+      <li><strong>Remember anonymity is a system, not a switch:</strong> a VPN is one layer, and a single layer is rarely enough on its own.</li>
+    </ul>
+
+    <div class="cta">
+      <h3>See your <span class="accent">GDID</span> — and everything else Windows keeps on you</h3>
+      <p>Blacklight surfaces your GDID, execution history, network usage, and every privacy toggle on one local screen. Open source, runs 100% locally.</p>
+      <a href="https://github.com/agiftakis/blacklight" target="_blank" class="btn"><span>★</span> Star on GitHub</a>
+    </div>
+
+    <div class="related">
+      <div class="label">Related artifacts</div>
+      <div class="related-grid">
+        <a href="/#artifacts"><div class="t">SRUM</div><div class="d">Per-app run + network usage from SRUDB.dat</div><div class="soon">Coming soon</div></a>
+        <a href="/#artifacts"><div class="t">UserAssist</div><div class="d">ROT13-obfuscated log of launched programs</div><div class="soon">Coming soon</div></a>
+        <a href="/#artifacts"><div class="t">BAM</div><div class="d">Background Activity Moderator run timestamps</div><div class="soon">Coming soon</div></a>
+        <a href="/#artifacts"><div class="t">Prefetch</div><div class="d">App-launch cache that doubles as a run log</div><div class="soon">Coming soon</div></a>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div>
+      <a href="/">Blacklight</a> ·
+      <a href="https://github.com/agiftakis/blacklight" target="_blank">GitHub</a> ·
+      <a href="https://github.com/agiftakis/blacklight/issues" target="_blank">Report a bug</a>
+    </div>
+    <div style="margin-top: 8px; color: var(--text-dim);">
+      Peach Tree Apps · 2026 &nbsp;·&nbsp; This page is educational; Blacklight is a read-only, local-first privacy tool.
+    </div>
+  </footer>
+
+  <script>
+    function copyCode(btn) {
+      const code = btn.closest('.code').querySelector('code').innerText;
+      navigator.clipboard.writeText(code).then(() => {
+        const old = btn.textContent;
+        btn.textContent = 'Copied';
+        setTimeout(() => { btn.textContent = old; }, 1600);
+      });
+    }
+  </script>
+</body>
+</html>
