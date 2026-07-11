@@ -472,6 +472,18 @@
       padding: 1px 4px;
       border-radius: 2px;
     }
+    .key-card .card-link {
+      display: inline-block;
+      margin-top: 14px;
+      color: var(--green);
+      text-decoration: none;
+      font-size: 12px;
+      letter-spacing: 1px;
+      border-bottom: 1px solid var(--green-dim);
+      padding-bottom: 2px;
+      transition: all 0.2s;
+    }
+    .key-card .card-link:hover { text-shadow: 0 0 8px var(--green-glow); }
 
     /* ============ REQUIREMENTS ============ */
     .req-grid {
@@ -981,6 +993,7 @@
             <h4>GDID</h4>
             <p>The persistent device identifier that stays fixed across updates and VPN changes.</p>
             <code>HKCU\SOFTWARE\Microsoft\IdentityCRL\ExtendedProperties\LID</code>
+            <a href="/artifacts/gdid" class="card-link">Read the full breakdown →</a>
           </div>
           <div class="key-card">
             <span class="badge">Network</span>
