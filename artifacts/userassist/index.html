@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>What Is the Windows GDID? How to Find Your Global Device Identifier | Blacklight</title>
-  <meta name="description" content="The Windows GDID (Global Device Identifier) is a persistent, device-level ID stored at HKCU\SOFTWARE\Microsoft\IdentityCRL\ExtendedProperties\LID. It survives updates and VPNs. Here's what it is, where it lives, and how to find yours." />
-  <link rel="canonical" href="https://blacklight.tools/artifacts/gdid" />
+  <title>What Is Windows UserAssist? Decode Your Program-Launch History | Blacklight</title>
+  <meta name="description" content="Windows UserAssist is a registry log of every GUI program you launch — with run counts and timestamps — stored ROT13-encoded at HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\UserAssist. It survives uninstalling the program. Here's what it is and how to decode yours." />
+  <link rel="canonical" href="https://blacklight.tools/artifacts/userassist" />
   <link rel="icon" type="image/png" href="/favicon.png" />
 
   <!-- OpenGraph / Twitter -->
-  <meta property="og:title" content="What Is the Windows GDID? Find Your Global Device Identifier" />
-  <meta property="og:description" content="A persistent Windows device ID that survives updates and VPNs — stored in your registry at IdentityCRL\ExtendedProperties\LID. What it is and how to find yours." />
+  <meta property="og:title" content="What Is Windows UserAssist? Decode Your Program-Launch History" />
+  <meta property="og:description" content="A ROT13-encoded registry log of every GUI program you've launched — run counts, timestamps, and it survives uninstalling the app. What it is and how to decode yours." />
   <meta property="og:type" content="article" />
-  <meta property="og:url" content="https://blacklight.tools/artifacts/gdid" />
+  <meta property="og:url" content="https://blacklight.tools/artifacts/userassist" />
   <meta property="og:image" content="https://blacklight.tools/og-image.png" />
   <meta name="twitter:card" content="summary_large_image" />
 
@@ -21,13 +21,13 @@
   {
     "@context": "https://schema.org",
     "@type": "TechArticle",
-    "headline": "What Is the Windows GDID (Global Device Identifier)?",
-    "description": "The Windows GDID is a persistent, device-level identifier stored in the registry at HKCU\\SOFTWARE\\Microsoft\\IdentityCRL\\ExtendedProperties\\LID. It survives OS updates and is not masked by a VPN.",
+    "headline": "What Is Windows UserAssist?",
+    "description": "Windows UserAssist is a ROT13-encoded registry log of GUI program launches stored at HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\UserAssist. It records run counts and timestamps and survives uninstalling the program.",
     "author": { "@type": "Organization", "name": "Peach Tree Apps" },
     "publisher": { "@type": "Organization", "name": "Blacklight" },
-    "datePublished": "2026-07-11",
-    "dateModified": "2026-07-11",
-    "mainEntityOfPage": "https://blacklight.tools/artifacts/gdid"
+    "datePublished": "2026-07-13",
+    "dateModified": "2026-07-13",
+    "mainEntityOfPage": "https://blacklight.tools/artifacts/userassist"
   }
   </script>
 
@@ -264,38 +264,40 @@
 
   <main>
     <div class="breadcrumb">
-      <a href="/">Home</a><span class="sep">/</span><a href="/#artifacts">Artifacts</a><span class="sep">/</span>GDID
+      <a href="/">Home</a><span class="sep">/</span><a href="/#artifacts">Artifacts</a><span class="sep">/</span>UserAssist
     </div>
 
-    <h1>The Windows <span class="accent">GDID</span><br/>(Global Device Identifier)</h1>
+    <h1>The Windows <span class="accent">UserAssist</span><br/>Key</h1>
 
     <p class="lede">
-      The <strong>GDID</strong> is a persistent, device-level identifier that Windows assigns to your installation. It stays fixed across OS updates, and a VPN does nothing to hide it — because it's stored locally and reported by the operating system itself, not by your network. This page explains what it is, where it lives, and how to find yours.
+      <strong>UserAssist</strong> is a registry log of the graphical programs you've launched — how many times, and when you last ran them. Windows stores it obfuscated with <strong>ROT13</strong>, a trivial letter-shift cipher. The most important thing about it: the record <strong>survives uninstalling the program</strong>. This page explains what it is, where it lives, and how to decode yours.
     </p>
 
-    <h2>What is the GDID?</h2>
+    <h2>What is UserAssist?</h2>
     <p>
-      A Global Device Identifier is a <strong>persistent, device-level identifier</strong> designed to uniquely identify an installation of Windows — on a physical device or a virtual machine — across certain Microsoft services and scenarios. Technically it's a 64-bit Microsoft Account "Device PUID" that is <strong>assigned by Microsoft's servers</strong> (login.live.com) during setup and then stored in your registry.
+      UserAssist is a Windows feature that quietly tracks the <strong>GUI programs and shortcuts you launch</strong> [anything you double-click or start from the Start menu or desktop — as opposed to commands typed into a console]. Its original purpose was mundane: help Windows surface your most-used apps in Start and search. But as a side effect it keeps a running per-user history of program execution.
     </p>
     <p>
-      Importantly, it isn't tied to whether you sign in with a Microsoft Account. The Connected Devices Platform [the Windows service that syncs your device to Microsoft's device graph] has an <strong>anonymous device path</strong> that provisions an identifier even without an account. In practice: if you're running Windows, you have one.
+      For each program it records a <strong>run count</strong>, a <strong>last-execution timestamp</strong>, and a <strong>focus time</strong> [roughly how long the app sat in the foreground while you used it]. Because it's tied to the Windows Explorer shell, it captures desktop and Start-menu launches — but not programs started from the Run box or a terminal.
     </p>
 
     <h2>Where it lives</h2>
     <p>
-      The identifier is stored in the current-user registry hive, under the IdentityCRL extended properties:
+      The data sits in the current-user registry hive [<strong>HKCU</strong> — your own account's settings, readable without administrator rights], split across two GUID-named subkeys:
     </p>
     <div class="spec">
-      <div class="spec-row"><div class="k">Registry Path</div><div class="v"><span class="path">HKCU\SOFTWARE\Microsoft\IdentityCRL\ExtendedProperties\LID</span></div></div>
-      <div class="spec-row"><div class="k">Type</div><div class="v">64-bit MSA Device PUID (server-assigned)</div></div>
-      <div class="spec-row"><div class="k">Assigned by</div><div class="v">login.live.com during device provisioning</div></div>
-      <div class="spec-row"><div class="k">Survives updates?</div><div class="v"><span class="path">Yes</span> — consistent across Windows OS updates</div></div>
-      <div class="spec-row"><div class="k">Survives reinstall?</div><div class="v">No — a clean reinstall is assigned a new GDID</div></div>
+      <div class="spec-row"><div class="k">Registry Path</div><div class="v"><span class="path">HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\UserAssist\{GUID}\Count</span></div></div>
+      <div class="spec-row"><div class="k">Executables GUID</div><div class="v"><span class="path">{CEBFF5CD-ACE2-4F4F-9178-9926F41749EA}</span> — programs run</div></div>
+      <div class="spec-row"><div class="k">Shortcuts GUID</div><div class="v"><span class="path">{F4E57C4B-2036-45F0-A9AB-443BCFE33D9F}</span> — .lnk shortcuts run</div></div>
+      <div class="spec-row"><div class="k">Encoding</div><div class="v">ROT13 — weak letter-substitution (e.g. <span class="path">Rundll32.exe</span> is stored as <span class="path">ehaqyy32.rkr</span>)</div></div>
+      <div class="spec-row"><div class="k">Data captured</div><div class="v">Run count, last-execution time, focus time</div></div>
+      <div class="spec-row"><div class="k">Requires admin?</div><div class="v"><span class="path">No</span> — it lives in your own user hive</div></div>
+      <div class="spec-row"><div class="k">Survives uninstall?</div><div class="v"><span class="path">Yes</span> — the log entry remains after the program is gone</div></div>
     </div>
 
-    <h2>How to find yours</h2>
+    <h2>How to decode yours</h2>
     <p>
-      Open <strong>PowerShell</strong> and run the command below. It reads the IdentityCRL extended properties on your machine [a read-only lookup — it does not change anything]:
+      Open <strong>PowerShell</strong> and paste the block below. It reads both UserAssist GUID subkeys, un-scrambles the ROT13 value names, and prints the readable list of programs your account has launched [a read-only lookup — it changes nothing on your system]:
     </p>
     <div class="code">
       <div class="code-head">
@@ -303,47 +305,46 @@
         <span class="label">powershell — read-only</span>
         <button class="copy" onclick="copyCode(this)">Copy</button>
       </div>
-      <pre><code><span class="cm"># Read the IdentityCRL extended properties (where the GDID/LID lives)</span>
-Get-ItemProperty -Path <span class="kw">"HKCU:\SOFTWARE\Microsoft\IdentityCRL\ExtendedProperties"</span> -ErrorAction SilentlyContinue | Format-List</code></pre>
+      <pre><code><span class="cm"># UserAssist decoder — reveals the GUI programs you've launched (read-only, no admin)</span>
+$base = <span class="kw">"HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\UserAssist"</span>;
+function Rot13($s){ -join ($s.ToCharArray() | ForEach-Object { $c=[int]$_; if($c -ge 65 -and $c -le 90){[char]((($c-65+13)%26)+65)} elseif($c -ge 97 -and $c -le 122){[char]((($c-97+13)%26)+97)} else{$_} }) };
+Get-ChildItem $base | ForEach-Object { $k = Join-Path $_.PSPath <span class="kw">"Count"</span>; if(Test-Path $k){ (Get-Item $k).GetValueNames() | Where-Object { $_ } | ForEach-Object { Rot13 $_ } } } | Sort-Object -Unique</code></pre>
     </div>
     <p style="font-size: 13px; color: var(--text-dim);">
-      If the key exists, you'll see a <strong>LID</strong> value among the properties — that's your device identifier. The exact fields present can vary between machines and Windows versions; on some systems the key may be empty or absent, which simply means the identifier is provisioned through a different path.
+      Decoded entries look like <strong>UEME_RUNPATH:C:\...\program.exe</strong>. The <strong>UEME_RUNPATH</strong> prefix marks a program that was executed; you may also see session and shortcut entries. On some systems tracking is disabled or the key is sparse — an empty result simply means little or nothing was logged for your account.
     </p>
 
-    <h2>Why a VPN doesn't hide it</h2>
+    <h2>Why it matters</h2>
     <p>
-      This is the part that surprises people. A VPN masks your <strong>network exit point</strong> — the public IP address anyone watching your traffic would see. But it has no effect on what the operating system itself already knows and stores. The GDID sits above the network layer, as a constant thread that ties your sessions together.
-    </p>
-    <p>
-      So the moment your real identity is ever exposed even once — the VPN drops, a connection leaks, or you sign into a personal account — that event can be correlated back to the same device identifier. The IP rotates; the GDID doesn't rotate with it.
+      UserAssist is a quiet, honest witness. Uninstalling a program removes its files — but not this log. The ROT13 record of "you ran <em>X</em>, this many times, last on this date" lingers in the registry after the application itself is long gone. That's exactly why it's a staple of forensic examinations.
     </p>
 
     <div class="callout">
-      <span class="tag">Real-world case</span>
-      In July 2026, U.S. court documents in the Scattered Spider extradition case revealed that investigators used a Windows GDID, alongside other telemetry, to correlate a suspect's activity across multiple countries and VPN providers. The network endpoint kept changing; the Windows installation identifier stayed constant. It was the first widely-reported instance of this identifier surfacing in a public criminal complaint.
+      <span class="tag">What the record reveals</span>
+      In documented forensic cases, UserAssist has shown that a program was executed multiple times on a user's profile — with exact run counts and timestamps — even after the person uninstalled it and denied ever using it. The application was gone; the decoded log wasn't. If it ran from the Windows shell, UserAssist most likely remembers.
     </div>
 
     <h2>How to reduce your exposure</h2>
     <p>
-      You can't casually delete the GDID, but you can shrink the surrounding telemetry footprint. Standard, legitimate privacy hygiene:
+      This is standard, legitimate privacy hygiene [tidying up traces on your <em>own</em> machine — not evading anything]:
     </p>
     <ul>
-      <li><strong>Minimize diagnostic data:</strong> Settings → Privacy &amp; security → Diagnostics &amp; feedback → turn off optional diagnostic data. This reduces what gets sent, though it doesn't remove the identifier.</li>
-      <li><strong>Separate your identities:</strong> don't sign into personal accounts from an environment you want kept isolated — correlation between accounts is what does the damage.</li>
-      <li><strong>Use a dedicated or amnesiac system</strong> for sensitive work — privacy-focused Linux live systems don't generate persistent Windows identifiers between reboots.</li>
-      <li><strong>Remember anonymity is a system, not a switch:</strong> a VPN is one layer, and a single layer is rarely enough on its own.</li>
+      <li><strong>Turn off launch tracking:</strong> Settings → Privacy &amp; security → General → disable "Let Windows improve Start and search results by tracking app launches." New launches stop being recorded.</li>
+      <li><strong>Clear existing entries:</strong> the values under each <strong>Count</strong> subkey can be cleared to remove the historical log for your account.</li>
+      <li><strong>Know it's per-user:</strong> each Windows account keeps its own UserAssist history, so clearing one profile doesn't touch another.</li>
+      <li><strong>Remember it's one artifact of many:</strong> Prefetch, BAM, and SRUM record execution too — real privacy means understanding the whole set, not just one key.</li>
     </ul>
 
     <div class="cta">
-      <h3>See your <span class="accent">GDID</span> — and everything else Windows keeps on you</h3>
-      <p>Blacklight surfaces your GDID, execution history, network usage, and every privacy toggle on one local screen. Open source, runs 100% locally.</p>
+      <h3>See your <span class="accent">UserAssist</span> log — and everything else Windows keeps on you</h3>
+      <p>Blacklight surfaces your execution history, identifiers, network usage, and every privacy toggle on one local screen. Open source, runs 100% locally.</p>
       <a href="https://github.com/agiftakis/blacklight" target="_blank" class="btn"><span>★</span> Star on GitHub</a>
     </div>
 
     <div class="related">
       <div class="label">Related artifacts</div>
       <div class="related-grid">
-        <a href="/artifacts/userassist"><div class="t">UserAssist</div><div class="d">ROT13-obfuscated log of launched programs</div><div class="live">Read now</div></a>
+        <a href="/artifacts/gdid"><div class="t">GDID</div><div class="d">Persistent device identifier that survives VPNs &amp; updates</div><div class="live">Read now</div></a>
         <a href="/#artifacts"><div class="t">SRUM</div><div class="d">Per-app run + network usage from SRUDB.dat</div><div class="soon">Coming soon</div></a>
         <a href="/#artifacts"><div class="t">BAM</div><div class="d">Background Activity Moderator run timestamps</div><div class="soon">Coming soon</div></a>
         <a href="/#artifacts"><div class="t">Prefetch</div><div class="d">App-launch cache that doubles as a run log</div><div class="soon">Coming soon</div></a>
