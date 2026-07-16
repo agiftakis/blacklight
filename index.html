@@ -290,6 +290,60 @@
     }
     .download-meta span { color: var(--green); }
 
+    /* ============ FIRST-LAUNCH (SMARTSCREEN) BANNER ============ */
+    .ss-wrap { padding: 0 24px; position: relative; z-index: 2; }
+    .ss-banner {
+      max-width: 820px;
+      margin: 0 auto;
+      background: rgba(15, 22, 20, 0.85);
+      border: 1.5px solid var(--red);
+      border-radius: 12px;
+      padding: 26px 30px;
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.65;
+      text-align: left;
+      animation: ss-neon-pulse 2.2s ease-in-out infinite;
+    }
+    @keyframes ss-neon-pulse {
+      0%, 100% {
+        box-shadow: 0 0 8px rgba(255,0,60,0.35), 0 0 22px rgba(255,0,60,0.16), inset 0 0 12px rgba(255,0,60,0.05);
+        border-color: rgba(255,0,60,0.55);
+      }
+      50% {
+        box-shadow: 0 0 20px rgba(255,0,60,0.75), 0 0 60px rgba(255,0,60,0.40), inset 0 0 22px rgba(255,0,60,0.09);
+        border-color: rgba(255,0,60,1);
+      }
+    }
+    .ss-head {
+      display: flex; align-items: flex-start; gap: 12px;
+      font-family: var(--display); font-weight: 700;
+      font-size: 17px; line-height: 1.4; letter-spacing: 0.3px;
+      color: var(--red); text-shadow: 0 0 10px rgba(255,0,60,0.45);
+      margin-bottom: 14px;
+    }
+    .ss-head .ss-icon { flex: none; font-size: 18px; line-height: 1.4; }
+    .ss-body { color: var(--text); margin: 0 0 12px; }
+    .ss-body strong { color: #e6efe9; font-weight: 700; }
+    .ss-run { color: var(--text); margin: 0 0 16px; }
+    .ss-key {
+      display: inline-block; font-family: var(--mono); font-weight: 700;
+      font-size: 12.5px; color: #e6efe9;
+      background: rgba(255,0,60,0.08); border: 1px solid rgba(255,0,60,0.6);
+      border-radius: 5px; padding: 2px 9px; margin: 0 3px; white-space: nowrap;
+    }
+    .ss-safe {
+      color: var(--green); font-size: 13px; letter-spacing: 0.3px;
+      text-shadow: 0 0 8px var(--green-glow); margin: 0;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .ss-banner {
+        animation: none;
+        box-shadow: 0 0 18px rgba(255,0,60,0.5), 0 0 45px rgba(255,0,60,0.25);
+        border-color: var(--red);
+      }
+    }
+
     /* ============ SECTION SHARED ============ */
     section.content-section {
       padding: 100px 32px;
@@ -1061,6 +1115,32 @@
     </div>
   </section>
 
+  <!-- FIRST-LAUNCH (SMARTSCREEN) BANNER -->
+  <div class="ss-wrap">
+    <div class="ss-banner" role="note" aria-label="First launch notice">
+      <div class="ss-head">
+        <span class="ss-icon" aria-hidden="true">⚠</span>
+        <span>First launch: Windows will show a blue "protected your PC" pop-up — this is normal.</span>
+      </div>
+
+      <p class="ss-body">
+        Because this app is free and not signed with a paid corporate certificate, Windows SmartScreen shows
+        <strong>"Windows protected your PC — unknown publisher"</strong> the first time you run the installer. It is
+        <strong>completely harmless</strong> — it just means Microsoft doesn't recognize an indie developer's
+        signature yet.
+      </p>
+
+      <p class="ss-run">
+        To install it: click <span class="ss-key">More info</span> then click <span class="ss-key">Run anyway</span>.
+        That's it — you'll only see this once.
+      </p>
+
+      <p class="ss-safe">
+        ✓ Safe to run. Open-source. No data collection, nothing runs in the background.
+      </p>
+    </div>
+  </div>
+
   <!-- LIVE TELEMETRY -->
   <section class="content-section" id="stats">
     <div class="section-wrap">
@@ -1308,3 +1388,6 @@
   </script>
 </body>
 </html>
+
+
+
