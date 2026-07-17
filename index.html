@@ -714,7 +714,7 @@
 
     .stat-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       gap: 18px;
     }
     .stat-card {
@@ -877,7 +877,7 @@
   <!-- HERO -->
   <section class="hero">
     <div class="hero-content">
-      <div class="hero-tag">Pre-release · Windows x64 · Open Source</div>
+      <div class="hero-tag">v1.0.0 · Windows x64 · Open Source</div>
       <h1>
         Windows is watching.<br/>
         Watch back.<br/>
@@ -893,16 +893,16 @@
       </p>
 
       <div class="cta-row">
-        <a href="https://github.com/agiftakis/blacklight" target="_blank" class="btn-download" id="star-btn">
-          <span class="icon">★</span>
-          Star on GitHub
+        <a href="https://github.com/agiftakis/blacklight-app/releases/download/v1.0.0/Blacklight_1.0.0_x64-setup.exe" class="btn-download" id="download-btn">
+          <span class="icon">↓</span>
+          Download for Windows
         </a>
-        <a href="#how" class="btn-secondary">
-          Learn More
+        <a href="https://github.com/agiftakis/blacklight" target="_blank" class="btn-secondary">
+          ★ Star on GitHub
         </a>
       </div>
       <div class="download-meta">
-        <span>STATUS:</span> In active development &nbsp;·&nbsp; <span>OS:</span> Windows 10/11 (64-bit) &nbsp;·&nbsp; <span>STACK:</span> Tauri + Python
+        <span>STATUS:</span> Available now &nbsp;·&nbsp; <span>OS:</span> Windows 10/11 (64-bit) &nbsp;·&nbsp; <span>STACK:</span> Tauri + Python
       </div>
     </div>
   </section>
@@ -1166,6 +1166,11 @@
               <div class="sub">since deployment</div>
             </div>
             <div class="stat-card">
+              <div class="label">Downloads</div>
+              <div class="value muted" id="stat-downloads">···</div>
+              <div class="sub">live · via GitHub API</div>
+            </div>
+            <div class="stat-card">
               <div class="label">GitHub Stars</div>
               <div class="value muted" id="stat-stars">···</div>
               <div class="sub">live · via GitHub API</div>
@@ -1185,7 +1190,7 @@
           </div>
 
           <div class="telemetry-note">
-            <span>›</span> Visits are counted once per browser session. Star totals are pulled live from the GitHub API (the source of truth). No cookies, no third-party trackers, no accounts.
+            <span>›</span> Visits are counted once per browser session. Download and star totals are pulled live from the GitHub API (the source of truth). No cookies, no third-party trackers, no accounts.
           </div>
         </div>
       </div>
@@ -1196,15 +1201,18 @@
   <section class="final-cta" id="github">
     <div class="section-wrap">
       <div class="section-label" style="text-align: center;">// Ready?</div>
-      <h2>Follow <span class="accent">Blacklight</span> as it builds</h2>
-      <p>Star the repo to get the release the moment it drops, and help shape which artifacts get surfaced next.</p>
+      <h2>Download <span class="accent">Blacklight</span> v1.0.0</h2>
+      <p>See exactly what Windows records about you — 100% locally, free, and open source. While you're here, star the repo to help shape which artifacts get surfaced next.</p>
       <div style="display: inline-flex; flex-direction: column; align-items: center; gap: 20px;">
-        <a href="https://github.com/agiftakis/blacklight" target="_blank" class="btn-download">
-          <span class="icon">★</span>
-          Star on GitHub
+        <a href="https://github.com/agiftakis/blacklight-app/releases/download/v1.0.0/Blacklight_1.0.0_x64-setup.exe" class="btn-download">
+          <span class="icon">↓</span>
+          Download for Windows
+        </a>
+        <a href="https://github.com/agiftakis/blacklight" target="_blank" class="btn-secondary">
+          ★ Star on GitHub
         </a>
         <div class="download-meta">
-          <span>STATUS:</span> Pre-release &nbsp;·&nbsp; <span>SOURCE:</span> Open · MIT
+          <span>STATUS:</span> v1.0.0 available &nbsp;·&nbsp; <span>SOURCE:</span> Open · MIT
         </div>
       </div>
     </div>
@@ -1237,6 +1245,7 @@
       // ---- CONFIG (safe to edit) ----
       const COUNTER_NS   = 'blacklight-ptapps';        // your unique namespace on counterapi.dev (auto-created, fresh start)
       const GH_REPO      = 'agiftakis/blacklight';     // owner/repo used for the live star count
+      const APP_REPO     = 'agiftakis/blacklight-app'; // SEPARATE repo that hosts the installer Release (used for the live download count)
       const COUNTER_BASE = 'https://api.counterapi.dev/v1';
       // Countries shown individually in "Top origins". Anyone outside this list rolls into "Other".
       const WATCHLIST    = ['US', 'GB', 'CA', 'DE', 'IN', 'AU', 'FR', 'NL', 'BR', 'JP', 'GR'];
@@ -1326,6 +1335,23 @@
           animateTo($('stat-stars'), repo.stargazers_count || 0);
         } catch (e) {
           $('stat-stars').textContent = '\u2014';
+        }
+      })();
+
+      // ---- 2b. DOWNLOADS (sum of every release asset's download_count) ----
+      // Reads the SEPARATE app repo (blacklight-app), where the installer is released.
+      (async () => {
+        try {
+          const r = await fetch('https://api.github.com/repos/' + APP_REPO + '/releases');
+          if (!r.ok) throw new Error('gh releases');
+          const releases = await r.json();
+          let total = 0;
+          releases.forEach((rel) => {
+            (rel.assets || []).forEach((a) => { total += (a.download_count || 0); });
+          });
+          animateTo($('stat-downloads'), total);
+        } catch (e) {
+          $('stat-downloads').textContent = '\u2014';
         }
       })();
 
