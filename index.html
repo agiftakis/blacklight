@@ -1243,12 +1243,14 @@
     /* ============ LIVE TELEMETRY ============ */
     (function () {
       // ---- CONFIG (safe to edit) ----
-      const COUNTER_NS   = 'blacklight-ptapps';        // your unique namespace on counterapi.dev (auto-created, fresh start)
-      const GH_REPO      = 'agiftakis/blacklight';     // owner/repo used for the live star count
-      const APP_REPO     = 'agiftakis/blacklight-app'; // SEPARATE repo that hosts the installer Release (used for the live download count)
-      const COUNTER_BASE = 'https://api.counterapi.dev/v1';
+      // Visit + country counters now come from our OWN endpoint: /api/stats
+      // (a Vercel serverless function backed by a secret GitHub Gist).
+      // The old counterapi.dev v1 service was switched off by the vendor
+      // (HTTP 410 Gone), which is why these numbers silently died.
+      const STATS_API = '/api/stats';
+      const GH_REPO   = 'agiftakis/blacklight';     // owner/repo used for the live star count
       // Countries shown individually in "Top origins". Anyone outside this list rolls into "Other".
-      const WATCHLIST    = ['US', 'GB', 'CA', 'DE', 'IN', 'AU', 'FR', 'NL', 'BR', 'JP', 'GR'];
+      const WATCHLIST = ['US', 'GB', 'CA', 'DE', 'IN', 'AU', 'FR', 'NL', 'BR', 'JP', 'GR'];
 
       const $ = (id) => document.getElementById(id);
 
@@ -1256,11 +1258,6 @@
       const OPTED_OUT   = localStorage.getItem('bl_optout') === '1';
       // A visit is counted only once per browser session (refreshes don't inflate it).
       const NEW_SESSION = !sessionStorage.getItem('bl_seen');
-
-      const todayKey = (() => {
-        const d = new Date(), p = (n) => String(n).padStart(2, '0');
-        return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
-      })();
 
       const countryName = (cc) => {
         try { return new Intl.DisplayNames(['en'], { type: 'region' }).of(cc) || cc; }
@@ -1280,120 +1277,46 @@
         })(start);
       }
 
-      async function counterUp(key, _retry) {
-        try {
-          const r = await fetch(COUNTER_BASE + '/' + COUNTER_NS + '/' + key + '/up');
-          if (!r.ok) throw new Error('up ' + r.status);
-          return (await r.json()).count;
-        } catch (e) {
-          // On a fresh namespace, two simultaneous creates can collide; one retry after a
-          // short pause lands cleanly because the namespace now exists.
-          if (!_retry) {
-            await new Promise((res) => setTimeout(res, 350));
-            return counterUp(key, true);
-          }
-          throw e;
-        }
-      }
-      async function counterGet(key) {
-        const r = await fetch(COUNTER_BASE + '/' + COUNTER_NS + '/' + key + '/');
-        if (!r.ok) throw new Error('get');
-        return (await r.json()).count;
+      function dash(id) {
+        const el = $(id);
+        if (el) { el.textContent = '\u2014'; el.classList.remove('muted'); }
       }
 
-      // ---- 1. VISITS (total + today) ----
-      (async () => {
-        try {
-          let total, today;
-          if (NEW_SESSION && !OPTED_OUT) {
-            sessionStorage.setItem('bl_seen', '1');
-            // Sequential, NOT concurrent: the first write creates the namespace,
-            // so the second can't collide with it.
-            total = await counterUp('visits-total');
-            today = await counterUp('visits-' + todayKey);
-          } else {
-            [total, today] = await Promise.all([
-              counterGet('visits-total').catch(() => null),
-              counterGet('visits-' + todayKey).catch(() => null)
-            ]);
-          }
-          animateTo($('stat-total'), total);
-          animateTo($('stat-today'), today);
-          $('stat-today-date').textContent = todayKey;
-        } catch (e) {
-          $('stat-total').textContent = '\u2014';
-          $('stat-today').textContent = '\u2014';
-        }
-      })();
-
-      // ---- 2. GITHUB STARS (the source of truth) ----
-      (async () => {
-        try {
-          const r = await fetch('https://api.github.com/repos/' + GH_REPO);
-          if (!r.ok) throw new Error('gh');
-          const repo = await r.json();
-          animateTo($('stat-stars'), repo.stargazers_count || 0);
-        } catch (e) {
-          $('stat-stars').textContent = '\u2014';
-        }
-      })();
-
-      // ---- 2b. DOWNLOADS (sum of every release asset's download_count) ----
-      // Reads the SEPARATE app repo (blacklight-app), where the installer is released.
-      (async () => {
-        try {
-          const r = await fetch('https://api.github.com/repos/' + APP_REPO + '/releases');
-          if (!r.ok) throw new Error('gh releases');
-          const releases = await r.json();
-          let total = 0;
-          releases.forEach((rel) => {
-            (rel.assets || []).forEach((a) => { total += (a.download_count || 0); });
-          });
-          animateTo($('stat-downloads'), total);
-        } catch (e) {
-          $('stat-downloads').textContent = '\u2014';
-        }
-      })();
-
-      // ---- 3. COUNTRY (this visitor + rolling top-origins tally) ----
-      (async () => {
-        let cc = null, name = null;
-        try {
-          const d = await (await fetch('https://ipwho.is/')).json();
-          if (d && d.success) { cc = d.country_code; name = d.country; }
-        } catch (e) {}
-        if (!cc) {
+      // ---- Visitor country lookup (client-side, best effort, never blocks for long) ----
+      async function lookupCountry() {
+        const timeout = (ms) => new Promise((res) => setTimeout(() => res(null), ms));
+        const attempt = (async () => {
+          try {
+            const d = await (await fetch('https://ipwho.is/')).json();
+            if (d && d.success) return { cc: d.country_code, name: d.country };
+          } catch (e) {}
           try {
             const d = await (await fetch('https://get.geojs.io/v1/ip/geo.json')).json();
-            if (d && d.country_code) { cc = d.country_code; name = d.country; }
+            if (d && d.country_code) return { cc: d.country_code, name: d.country };
           } catch (e) {}
-        }
+          return null;
+        })();
+        return (await Promise.race([attempt, timeout(3000)])) || { cc: null, name: null };
+      }
 
-        const originEl = $('stat-origin');
-        if (cc) {
-          originEl.classList.remove('muted');
-          originEl.innerHTML = '<span class="cc-badge">' + cc + '</span>';
-          $('stat-origin-sub').textContent = name || countryName(cc);
-        } else {
-          originEl.textContent = '\u2014';
-          $('stat-origin-sub').textContent = 'lookup unavailable';
-        }
-
-        if (cc && NEW_SESSION && !OPTED_OUT) {
-          counterUp('country-' + (WATCHLIST.includes(cc) ? cc : 'OTHER')).catch(() => {});
-        }
-
-        const keys = WATCHLIST.concat(['OTHER']);
-        const results = await Promise.allSettled(keys.map((k) => counterGet('country-' + k)));
-        const rows = [];
-        results.forEach((res, i) => {
-          const v = res.status === 'fulfilled' ? res.value : 0;
-          if (v > 0) rows.push({ code: keys[i], count: v });
-        });
-        rows.sort((a, b) => b.count - a.count);
-
+      // ---- Top origins list, built from the country tally the API returns ----
+      function renderOrigins(countries) {
         const list = $('origins-list');
+        if (!list || !countries) return;
+
+        const tally = {};
+        Object.keys(countries).forEach((cc) => {
+          const key = WATCHLIST.includes(cc) ? cc : 'OTHER';
+          tally[key] = (tally[key] || 0) + (countries[cc] || 0);
+        });
+
+        const rows = Object.keys(tally)
+          .map((code) => ({ code: code, count: tally[code] }))
+          .filter((row) => row.count > 0)
+          .sort((a, b) => b.count - a.count);
+
         if (rows.length === 0) return; // keep the "collecting signal" note
+
         const max = rows[0].count;
         list.innerHTML = rows.slice(0, 8).map((row) => {
           const label = row.code === 'OTHER'
@@ -1409,11 +1332,69 @@
         requestAnimationFrame(() => {
           list.querySelectorAll('.origin-fill').forEach((el) => { el.style.width = el.dataset.w + '%'; });
         });
+      }
+
+      // ---- 1. VISITS + DOWNLOADS + ORIGINS (one round trip to our own API) ----
+      (async () => {
+        // Paint the visitor's own country card first — it doesn't depend on our API.
+        const geo = await lookupCountry();
+        const originEl = $('stat-origin');
+        if (originEl) {
+          if (geo.cc) {
+            originEl.classList.remove('muted');
+            originEl.innerHTML = '<span class="cc-badge">' + geo.cc + '</span>';
+            $('stat-origin-sub').textContent = geo.name || countryName(geo.cc);
+          } else {
+            originEl.textContent = '\u2014';
+            $('stat-origin-sub').textContent = 'lookup unavailable';
+          }
+        }
+
+        const params = new URLSearchParams();
+        if (NEW_SESSION && !OPTED_OUT) {
+          sessionStorage.setItem('bl_seen', '1');
+          params.set('new', '1');            // tells the API to increment
+        }
+        if (geo.cc) params.set('cc', geo.cc);
+
+        let data = null;
+        try {
+          const r = await fetch(STATS_API + '?' + params.toString(), { cache: 'no-store' });
+          data = await r.json();
+        } catch (e) {
+          console.warn('[telemetry] /api/stats unreachable:', e);
+        }
+
+        if (!data) {
+          dash('stat-total'); dash('stat-today'); dash('stat-downloads');
+          return;
+        }
+
+        // Surface backend problems in the console instead of failing silently.
+        if (data.error) console.warn('[telemetry]', data.error);
+        if (data.errors && data.errors.length) console.warn('[telemetry]', data.errors.join(' | '));
+
+        animateTo($('stat-total'), data.visits_total);
+        animateTo($('stat-today'), data.visits_today);
+        if (data.today) $('stat-today-date').textContent = data.today;
+
+        animateTo($('stat-downloads'), data.downloads);
+
+        renderOrigins(data.countries);
+      })();
+
+      // ---- 2. GITHUB STARS (unauthenticated, public repo, still the source of truth) ----
+      (async () => {
+        try {
+          const r = await fetch('https://api.github.com/repos/' + GH_REPO);
+          if (!r.ok) throw new Error('gh');
+          const repo = await r.json();
+          animateTo($('stat-stars'), repo.stargazers_count || 0);
+        } catch (e) {
+          dash('stat-stars');
+        }
       })();
     })();
   </script>
 </body>
 </html>
-
-
-
